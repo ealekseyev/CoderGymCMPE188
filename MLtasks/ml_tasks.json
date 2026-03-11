@@ -93,6 +93,38 @@
             }
         },
         {
+            "series": "Linear Regression",
+            "level": 5,
+            "id": "linreg_lvl5_multioutput_adam",
+            "algorithm": "Linear Regression (Multi-Output + Adam)",
+            "description": "Multi-output linear regression predicting 3 targets simultaneously from 5 features using torch.nn.Linear(5,3) and Adam optimizer. Demonstrates per-output R2 metrics and joint MSE loss.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "math": "Joint MSE: J(W,b) = (1/mK)*sum_i sum_k (y_hat_ik - y_ik)^2. Per-output R2_k = 1 - SS_res_k/SS_tot_k.",
+                "data": "Synthetic X~N(0,1) shape [500,5]; 3 target outputs as linear combos of features + N(0,0.5) noise; 80/20 train/val split.",
+                "implementation": "torch.nn.Linear(5, 3); Adam(lr=0.01); nn.MSELoss(); 500 epochs; batch_size=32.",
+                "evaluation": "evaluate() returns mse (overall), r2_output_0/1/2 (per column), r2_mean.",
+                "main_block": "Train 500 epochs; evaluate train and val; assert all 3 val R2 > 0.85 AND val r2_mean > 0.88.",
+                "output": "Save model .pth, metrics .json, loss curve, per-output scatter plot."
+            }
+        },
+        {
+            "series": "Linear Regression",
+            "level": 6,
+            "id": "linreg_lvl6_lasso_proximal",
+            "algorithm": "LASSO Regression (Proximal Gradient Descent)",
+            "description": "LASSO (L1) regression on sparse synthetic data using manual proximal gradient descent with soft-thresholding. No torch.optim. Demonstrates sparsity-inducing regularization and feature selection.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "math": "Objective: J(w) = (1/2m)||Xw-y||^2 + lambda*||w||_1. Proximal update: w_temp = w - lr*grad; w = sign(w_temp)*max(|w_temp| - lr*lambda, 0).",
+                "data": "Synthetic sparse: X~N(0,1) shape [300,10]; true_w=[3,-2,1.5,0,0,0,0,0,0,0]; y=X@w+N(0,0.3). 80/20 split.",
+                "implementation": "Manual LassoModel (raw tensors, requires_grad=True); proximal GD in torch.no_grad(); lambda=0.1, lr=0.01, 1000 epochs, full-batch.",
+                "evaluation": "evaluate() returns mse, r2, sparsity_ratio (fraction |w_i|<1e-4), n_zero_weights.",
+                "main_block": "Train proximal GD; print learned vs true weights; assert val R2 > 0.85 AND sparsity_ratio > 0.50.",
+                "output": "Save weights .npy, metrics .json, loss+sparsity curves, weight comparison bar chart."
+            }
+        },
+        {
             "series": "Logistic Regression",
             "level": 1,
             "id": "logreg_lvl1_binary_raw",
@@ -148,6 +180,38 @@
                 "implementation": "Compute ECE (Expected Calibration Error) manually; optimize threshold for F1.",
                 "visualization": "Reliability diagram + ROC curve.",
                 "validation": "ECE decreases after calibration step (compare before/after)."
+            }
+        },
+        {
+            "series": "Logistic Regression",
+            "level": 5,
+            "id": "logreg_lvl5_iris_multiclass",
+            "algorithm": "Multinomial Logistic Regression (Iris + StepLR)",
+            "description": "Multinomial logistic regression on the real Iris dataset (150 samples, 4 features, 3 classes) using Adam + StepLR learning rate schedule. Evaluates accuracy and manual macro-F1.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "math": "Softmax cross-entropy loss. StepLR: lr_t = lr_0 * gamma^(floor(t/step_size)). Manual macro-F1 = mean per-class F1.",
+                "data": "Real: sklearn.datasets.load_iris(); 150 samples, 4 features, 3 balanced classes; stratified 80/20 split; standardize from train.",
+                "implementation": "nn.Linear(4,3); Adam(lr=0.05); StepLR(step_size=50, gamma=0.5); nn.CrossEntropyLoss(); 300 epochs.",
+                "evaluation": "evaluate() returns loss, accuracy, macro_f1 (manual), per-class F1, confusion matrix.",
+                "main_block": "Train 300 epochs with StepLR; assert val accuracy > 0.90 AND val macro_f1 > 0.85.",
+                "output": "Save model .pth, metrics .json, loss/accuracy/LR curves, confusion matrix heatmap."
+            }
+        },
+        {
+            "series": "Logistic Regression",
+            "level": 6,
+            "id": "logreg_lvl6_breast_cancer_roc",
+            "algorithm": "Binary Logistic Regression (Breast Cancer + RMSprop + AUC)",
+            "description": "Binary logistic regression on Breast Cancer Wisconsin (569 samples, 30 features) using RMSprop optimizer. Computes AUC via manual trapezoidal rule and optimal threshold via Youden's J statistic.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "math": "BCE loss. AUC = trapz(TPR, FPR). Youden's J: tau* = argmax(TPR - FPR).",
+                "data": "Real: sklearn.datasets.load_breast_cancer(); 569 samples, 30 features; stratified 80/20 split; sklearn StandardScaler.",
+                "implementation": "nn.Linear(30,1) + sigmoid; RMSprop(lr=0.001, alpha=0.99); nn.BCELoss(); 200 epochs; batch_size=32.",
+                "evaluation": "evaluate() returns loss, accuracy, auc (manual trapezoidal), optimal_threshold (Youden's J), accuracy_at_optimal_threshold, sensitivity, specificity.",
+                "main_block": "Train 200 epochs; assert val AUC > 0.95 AND val accuracy_at_optimal_threshold > 0.92.",
+                "output": "Save model .pth, metrics .json, loss/accuracy curves, ROC curve with AUC annotated and optimal threshold marked."
             }
         },
         {
